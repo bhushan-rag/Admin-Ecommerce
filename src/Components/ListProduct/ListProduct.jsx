@@ -1,17 +1,16 @@
 import React, { useEffect, useState } from "react";
 import "./ListProduct.css";
 import cross_icon from '../Assets/cross_icon.png'
-import { backend_url, currency } from "../../App";
+import { backend_url, currency } from "../../config";
 
 const ListProduct = () => {
   const [allproducts, setAllProducts] = useState([]);
 
   const fetchInfo = () => {
-      fetch(`${backend_url}/allproducts`, {
-        credentials:'include'
-    })
+    fetch(`${backend_url}/allproducts`)
       .then((res) => res.json())
-      .then((data) => setAllProducts(data))
+      .then((data) => setAllProducts(Array.isArray(data) ? data : []))
+      .catch((error) => console.error("Failed to load products", error))
   }
 
   useEffect(() => {
@@ -20,8 +19,7 @@ const ListProduct = () => {
 
   const removeProduct = async (id) => {
     await fetch(`${backend_url}/removeproduct`, {
-        method: 'POST',
-        credentials:'include',
+      method: 'POST',
       headers: {
         Accept: 'application/json',
         'Content-Type': 'application/json',
@@ -40,8 +38,8 @@ const ListProduct = () => {
       </div>
       <div className="listproduct-allproducts">
         <hr />
-        {allproducts.map((e, index) => (
-          <div key={index}>
+        {allproducts.map((e) => (
+          <div key={e.id}>
             <div className="listproduct-format-main listproduct-format">
               <img className="listproduct-product-icon" src={e.image} alt="" />
               <p className="cartitems-product-title">{e.name}</p>
