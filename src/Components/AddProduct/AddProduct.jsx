@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./AddProduct.css";
 import upload_area from "../Assets/upload_area.svg";
-import { backend_url } from "../../App";
+import { backend_url } from "../../config";
 
 const AddProduct = () => {
 
@@ -16,37 +16,59 @@ const AddProduct = () => {
   });
 
   const AddProduct = async () => {
+    const { name, description, category, new_price, old_price } = productDetails;
+    if (!name || !description || !new_price || !old_price) {
+      alert("Please fill in all product details");
+      return;
+    }
+    if (!image) {
+      alert("Please select a product image");
+      return;
+    }
 
-    let dataObj;
-    let product = productDetails;
+    try {
+      let formData = new FormData();
+      formData.append('product', image);
 
-    let formData = new FormData();
-    formData.append('product', image);
+      const uploadResp = await fetch(`${backend_url}/upload`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+        },
+        body: formData,
+      });
+      const uploadData = await uploadResp.json();
+      if (!uploadData.success) {
+        alert(uploadData.errors || "Image upload failed");
+        return;
+      }
 
-    await fetch(`${backend_url}/upload`, {
-      method: 'POST',
-      credentials:'include',
-      headers: {
-        Accept: 'application/json',
-      },
-      body: formData,
-    }).then((resp) => resp.json())
-      .then((data) => { dataObj = data });
-
-    if (dataObj.success) {
-      product.image = dataObj.image_url;
-      await fetch(`${backend_url}/addproduct`, {
-          method: 'POST',
-          credentials:'include',
+      const product = {
+        name,
+        description,
+        category,
+        image: uploadData.image_url,
+        new_price: Number(new_price),
+        old_price: Number(old_price),
+      };
+      const addResp = await fetch(`${backend_url}/addproduct`, {
+        method: 'POST',
         headers: {
           Accept: 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(product),
-      })
-        .then((resp) => resp.json())
-        .then((data) => { data.success ? alert("Product Added") : alert("Failed") });
-
+      });
+      const addData = await addResp.json();
+      if (addData.success) {
+        alert("Product Added");
+        setProductDetails({ name: "", description: "", image: "", category: "women", new_price: "", old_price: "" });
+        setImage(false);
+      } else {
+        alert(addData.errors || "Failed");
+      }
+    } catch (error) {
+      alert("Unable to reach the server, please try again later");
     }
   }
 
